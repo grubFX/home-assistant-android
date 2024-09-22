@@ -5,9 +5,7 @@ import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
-import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
-import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.records.*
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -34,7 +32,6 @@ class HealthConnectSensorManager : SensorManager {
             unitOfMeasurement = "kcal",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER
-
         )
 
         val totalCaloriesBurned = SensorManager.BasicSensor(
@@ -54,11 +51,21 @@ class HealthConnectSensorManager : SensorManager {
             commonR.string.basic_sensor_name_weight,
             commonR.string.sensor_description_weight,
             "mdi:weight",
-            unitOfMeasurement = "g",
+            unitOfMeasurement = "kg",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
             deviceClass = "weight"
+        )
 
+        val heartRate = SensorManager.BasicSensor(
+            id = "health_connect_heart_rate",
+            type = "sensor",
+            commonR.string.basic_sensor_name_heart_rate,
+            commonR.string.sensor_description_heart_rate,
+            "mdi:heart-pulse",
+            unitOfMeasurement = "bpm",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
     }
 
@@ -66,10 +73,11 @@ class HealthConnectSensorManager : SensorManager {
         get() = commonR.string.sensor_name_health_connect
 
     override fun requiredPermissions(sensorId: String): Array<String> {
-        return when {
-            (sensorId == activeCaloriesBurned.id) -> arrayOf(HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class))
-            (sensorId == totalCaloriesBurned.id) -> arrayOf(HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class))
-            (sensorId == weight.id) -> arrayOf(HealthPermission.getReadPermission(WeightRecord::class))
+        return when (sensorId) {
+            activeCaloriesBurned.id -> arrayOf(HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class))
+            totalCaloriesBurned.id -> arrayOf(HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class))
+            weight.id -> arrayOf(HealthPermission.getReadPermission(WeightRecord::class))
+            heartRate.id -> arrayOf(HealthPermission.getReadPermission(HeartRateRecord::class))
             else -> arrayOf()
         }
     }
@@ -85,6 +93,9 @@ class HealthConnectSensorManager : SensorManager {
         }
         if (isEnabled(context, totalCaloriesBurned)) {
             updateTotalCaloriesBurnedSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, heartRate)) {
+            updateHeartRateSensor(context, healthConnectClient)
         }
     }
 
@@ -117,7 +128,6 @@ class HealthConnectSensorManager : SensorManager {
             timeRangeFilter = TimeRangeFilter.between(
                 Instant.now().minus(30, ChronoUnit.DAYS),
                 Instant.now()
-
             ),
             ascendingOrder = false,
             pageSize = 1
@@ -126,7 +136,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             weight,
-            BigDecimal(response.records.last().weight.inGrams).setScale(2, RoundingMode.HALF_EVEN),
+            BigDecimal(response.records.last().weight.inKilograms).setScale(3, RoundingMode.HALF_EVEN),
             weight.statelessIcon,
             attributes = mapOf("date" to response.records.last().time)
         )
@@ -152,6 +162,29 @@ class HealthConnectSensorManager : SensorManager {
             activeCaloriesBurned,
             BigDecimal(response.records.last().energy.inKilocalories).setScale(2, RoundingMode.HALF_EVEN),
             activeCaloriesBurned.statelessIcon,
+            attributes = mapOf("endTime" to response.records.last().endTime)
+        )
+    }
+
+    private fun updateHeartRateSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val heartRateRequest = ReadRecordsRequest(
+            recordType = HeartRateRecord::class,
+            timeRangeFilter = TimeRangeFilter.between(
+                Instant.now().minus(30, ChronoUnit.DAYS),
+                Instant.now()
+            ),
+            ascendingOrder = false,
+            pageSize = 1
+        )
+        val response = runBlocking { healthConnectClient.readRecords(heartRateRequest) }
+        if (response.records.isEmpty()) {
+            return
+        }
+        onSensorUpdated(
+            context,
+            heartRate,
+            BigDecimal(response.records.last().samples.last().beatsPerMinute),
+            heartRate.statelessIcon,
             attributes = mapOf("endTime" to response.records.last().endTime)
         )
     }

@@ -107,6 +107,7 @@
     <string name="basic_sensor_name_sleep_confidence">Sleep confidence</string>
     <string name="basic_sensor_name_sleep_segment">Sleep segment</string>
     <string name="basic_sensor_name_total_calories_burned">Total calories burned</string>
+    <string name="basic_sensor_name_heart_rate">Heart Rate</string>
     <string name="basic_sensor_name_total_rx_gb">Total Rx GB</string>
     <string name="basic_sensor_name_total_tx_gb">Total Tx GB</string>
     <string name="basic_sensor_name_weight">Weight</string>
