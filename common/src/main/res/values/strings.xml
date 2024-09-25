@@ -1284,4 +1284,6 @@
     <string name="basic_sensor_name_sim_1_data_network_type">Data network type (SIM 1)</string>
     <string name="basic_sensor_name_sim_2_data_network_type">Data network type (SIM 2)</string>
     <string name="sensor_description_data_network_type">The radio technology (network type) currently in use on the device for data transmission</string>
+    <string name="basic_sensor_name_oxygen_saturation">Blood oxygen saturation (SpO2)</string>
+    <string name="sensor_description_oxygen_saturation">The percentage of oxygen saturation in the blood</string>
 </resources>

@@ -67,6 +67,17 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
+
+        val oxygenSaturation = SensorManager.BasicSensor(
+            id = "health_connect_oxygen_saturation",
+            type = "sensor",
+            commonR.string.basic_sensor_name_oxygen_saturation,
+            commonR.string.sensor_description_oxygen_saturation,
+            "mdi:heart-plus-outline",
+            unitOfMeasurement = "%",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
     }
 
     override val name: Int
@@ -78,6 +89,7 @@ class HealthConnectSensorManager : SensorManager {
             totalCaloriesBurned.id -> arrayOf(HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class))
             weight.id -> arrayOf(HealthPermission.getReadPermission(WeightRecord::class))
             heartRate.id -> arrayOf(HealthPermission.getReadPermission(HeartRateRecord::class))
+            oxygenSaturation.id -> arrayOf(HealthPermission.getReadPermission(OxygenSaturationRecord::class))
             else -> arrayOf()
         }
     }
@@ -96,6 +108,9 @@ class HealthConnectSensorManager : SensorManager {
         }
         if (isEnabled(context, heartRate)) {
             updateHeartRateSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, oxygenSaturation)) {
+            updateOxygenSaturationSensor(context, healthConnectClient)
         }
     }
 
@@ -186,6 +201,29 @@ class HealthConnectSensorManager : SensorManager {
             BigDecimal(response.records.last().samples.last().beatsPerMinute),
             heartRate.statelessIcon,
             attributes = mapOf("endTime" to response.records.last().endTime)
+        )
+    }
+
+    private fun updateOxygenSaturationSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val oxygenSaturationRequest = ReadRecordsRequest(
+            recordType = OxygenSaturationRecord::class,
+            timeRangeFilter = TimeRangeFilter.between(
+                Instant.now().minus(30, ChronoUnit.DAYS),
+                Instant.now()
+            ),
+            ascendingOrder = false,
+            pageSize = 1
+        )
+        val response = runBlocking { healthConnectClient.readRecords(oxygenSaturationRequest) }
+        if (response.records.isEmpty()) {
+            return
+        }
+        onSensorUpdated(
+            context,
+            oxygenSaturation,
+            response.records.last().percentage,
+            oxygenSaturation.statelessIcon,
+            attributes = mapOf("endTime" to response.records.last().time)
         )
     }
 

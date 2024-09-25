@@ -16,7 +16,7 @@ android {
 
     compileSdk = libs.versions.androidSdk.compile.get().toInt()
 
-    ndkVersion = "21.3.6528147"
+    ndkVersion = "25.2.9519653"
 
     useLibrary("android.car")
 

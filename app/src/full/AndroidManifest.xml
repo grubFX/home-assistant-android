@@ -3,12 +3,49 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-sdk tools:overrideLibrary="com.google.android.gms.threadnetwork" />
+
     <uses-permission android:name="com.google.android.gms.permission.CAR_FUEL" />
     <uses-permission android:name="com.google.android.gms.permission.CAR_MILEAGE" />
-    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
-    <uses-permission android:name="android.permission.health.READ_HEIGHT" />
-    <uses-permission android:name="android.permission.health.READ_BODY_FAT_PERCENTAGE" />
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_BASAL_BODY_TEMPERATURE" />
+    <uses-permission android:name="android.permission.health.READ_BASAL_METABOLIC_RATE" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_GLUCOSE" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
+    <uses-permission android:name="android.permission.health.READ_BODY_FAT" />
+    <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE" />
+    <uses-permission android:name="android.permission.health.READ_BODY_WATER_MASS" />
+    <uses-permission android:name="android.permission.health.READ_BONE_MASS" />
+    <uses-permission android:name="android.permission.health.READ_CERVICAL_MUCUS" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_ELEVATION_GAINED" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTES" />
+    <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED" />
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" />
+    <uses-permission android:name="android.permission.health.READ_HEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_HYDRATION" />
+    <uses-permission android:name="android.permission.health.READ_INTERMENSTRUAL_BLEEDING" />
+    <uses-permission android:name="android.permission.health.READ_LEAN_BODY_MASS" />
+    <uses-permission android:name="android.permission.health.READ_MENSTRUATION" />
+    <uses-permission android:name="android.permission.health.READ_NUTRITION" />
+    <uses-permission android:name="android.permission.health.READ_OVULATION_TEST" />
+    <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+    <uses-permission android:name="android.permission.health.READ_PLANNED_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_POWER" />
+    <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE" />
+    <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SEXUAL_ACTIVITY" />
+    <uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_SPEED" />
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_VO2_MAX" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_WHEELCHAIR_PUSHES" />
 
     <queries>
         <!-- For GMS Core/Play service -->
@@ -18,25 +55,31 @@
         <!-- End of GMS Core/Play service-->
     </queries>
 
-    <application
-        android:name="io.homeassistant.companion.android.HomeAssistantApplication" >
-        <meta-data android:name="io.sentry.auto-init" android:value="false" />
-        <meta-data android:name="io.sentry.release" android:value="${sentryRelease}" />
-        <meta-data android:name="io.sentry.dsn" android:value="${sentryDsn}" />
+    <application android:name="io.homeassistant.companion.android.HomeAssistantApplication">
+        <meta-data
+            android:name="io.sentry.auto-init"
+            android:value="false" />
+        <meta-data
+            android:name="io.sentry.release"
+            android:value="${sentryRelease}" />
+        <meta-data
+            android:name="io.sentry.dsn"
+            android:value="${sentryDsn}" />
 
         <activity
             android:name=".matter.MatterCommissioningActivity"
             android:configChanges="orientation|screenSize"
             android:exported="true"
-            android:theme="@style/Theme.HomeAssistant.Config"
-            android:launchMode="singleTop">
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.HomeAssistant.Config">
             <intent-filter>
-                <action android:name="com.google.android.gms.home.matter.ACTION_COMMISSION_DEVICE"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="com.google.android.gms.home.matter.ACTION_COMMISSION_DEVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
-        <receiver android:name=".location.HighAccuracyLocationReceiver"
+        <receiver
+            android:name=".location.HighAccuracyLocationReceiver"
             android:enabled="true"
             android:exported="true" />
 
@@ -52,7 +95,7 @@
             android:name=".location.HighAccuracyLocationService"
             android:enabled="true"
             android:exported="true"
-            android:foregroundServiceType="location"/>
+            android:foregroundServiceType="location" />
 
         <service
             android:name=".matter.MatterCommissioningService"
@@ -67,16 +110,17 @@
 
         <meta-data
             android:name="androidx.car.app.minCarApiLevel"
-            android:value="1"/>
+            android:value="1" />
         <meta-data
             android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc"/>
+            android:resource="@xml/automotive_app_desc" />
+
         <service
             android:name=".vehicle.HaCarAppService"
             android:exported="true">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
-                <category android:name="androidx.car.app.category.IOT"/>
+                <category android:name="androidx.car.app.category.IOT" />
             </intent-filter>
         </service>
         <service
@@ -88,7 +132,7 @@
             </intent-filter>
             <meta-data
                 android:name="home:0:preferred"
-                android:value=""/>
+                android:value="" />
         </service>
     </application>
 
