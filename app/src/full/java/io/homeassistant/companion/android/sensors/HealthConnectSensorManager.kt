@@ -27,7 +27,7 @@ class HealthConnectSensorManager : SensorManager {
     companion object {
         var previousSensorRequestTime: Instant = Instant.now().minus(30, ChronoUnit.DAYS);
 
-        // calorie sensors
+        // caloric sensors
         val activeCaloriesBurned = SensorManager.BasicSensor(
             id = "health_connect_active_calories_burned",
             type = "sensor",
@@ -38,7 +38,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER
         )
-
         val totalCaloriesBurned = SensorManager.BasicSensor(
             id = "health_connect_total_calories_burned",
             type = "sensor",
@@ -50,12 +49,56 @@ class HealthConnectSensorManager : SensorManager {
             updateType = SensorManager.BasicSensor.UpdateType.WORKER
         )
 
-        // weight sensor
+        // mass / weight / fat sensors
         val weight = SensorManager.BasicSensor(
             id = "health_connect_weight",
             type = "sensor",
             commonR.string.basic_sensor_name_weight,
             commonR.string.sensor_description_weight,
+            "mdi:weight",
+            unitOfMeasurement = "kg",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "weight"
+        )
+        val bodyFat = SensorManager.BasicSensor(
+            id = "health_connect_body_fat",
+            type = "sensor",
+            commonR.string.basic_sensor_name_body_fat,
+            commonR.string.sensor_description_body_fat,
+            "mdi:weight",
+            unitOfMeasurement = "%",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "weight"
+        )
+        val leanBodyMass = SensorManager.BasicSensor(
+            id = "health_connect_lean_body_mass",
+            type = "sensor",
+            commonR.string.basic_sensor_name_lean_body_mass,
+            commonR.string.sensor_description_lean_body_mass,
+            "mdi:weight",
+            unitOfMeasurement = "kg",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "weight"
+        )
+        val boneMass = SensorManager.BasicSensor(
+            id = "health_connect_bone_mass",
+            type = "sensor",
+            commonR.string.basic_sensor_name_bone_mass,
+            commonR.string.sensor_description_bone_mass,
+            "mdi:weight",
+            unitOfMeasurement = "kg",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "weight"
+        )
+        val bodyWaterMass = SensorManager.BasicSensor(
+            id = "health_connect_body_water_mass",
+            type = "sensor",
+            commonR.string.basic_sensor_name_body_water_mass,
+            commonR.string.sensor_description_body_water_mass,
             "mdi:weight",
             unitOfMeasurement = "kg",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
@@ -74,7 +117,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val heartRateVariability = SensorManager.BasicSensor(
             id = "health_connect_heart_rate_variability",
             type = "sensor",
@@ -85,7 +127,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val restingHeartRate = SensorManager.BasicSensor(
             id = "health_connect_resting_heart_rate",
             type = "sensor",
@@ -108,7 +149,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val bloodGlucose = SensorManager.BasicSensor(
             id = "health_connect_blood_glucose",
             type = "sensor",
@@ -119,7 +159,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val bloodPressure = SensorManager.BasicSensor(
             id = "health_connect_blood_pressure",
             type = "sensor",
@@ -142,7 +181,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val bodyTemperature = SensorManager.BasicSensor(
             id = "health_connect_body_temperature",
             type = "sensor",
@@ -153,7 +191,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val skinTemperature = SensorManager.BasicSensor(
             id = "health_connect_skin_temperature",
             type = "sensor",
@@ -183,6 +220,10 @@ class HealthConnectSensorManager : SensorManager {
             basalBodyTemperature.id -> arrayOf(HealthPermission.getReadPermission(BasalBodyTemperatureRecord::class))
             bodyTemperature.id -> arrayOf(HealthPermission.getReadPermission(BodyTemperatureRecord::class))
             skinTemperature.id -> arrayOf(HealthPermission.getReadPermission(SkinTemperatureRecord::class))
+            bodyFat.id -> arrayOf(HealthPermission.getReadPermission(BodyFatRecord::class))
+            leanBodyMass.id -> arrayOf(HealthPermission.getReadPermission(LeanBodyMassRecord::class))
+            boneMass.id -> arrayOf(HealthPermission.getReadPermission(BoneMassRecord::class))
+            bodyWaterMass.id -> arrayOf(HealthPermission.getReadPermission(BodyWaterMassRecord::class))
             else -> arrayOf()
         }
     }
@@ -225,6 +266,18 @@ class HealthConnectSensorManager : SensorManager {
         }
         if (isEnabled(context, skinTemperature)) {
             updateSkinTemperatureSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, bodyFat)) {
+            updateBodyFatSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, leanBodyMass)) {
+            updateLeanBodyMassSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, boneMass)) {
+            updateBoneMassSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, bodyWaterMass)) {
+            updateBodyWaterMass(context, healthConnectClient)
         }
 
         previousSensorRequestTime = Instant.now()
@@ -505,6 +558,86 @@ class HealthConnectSensorManager : SensorManager {
 //        )
     }
 
+    private fun updateBodyFatSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(BodyFatRecord::class))
+        }.records as List<BodyFatRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            bodyFat,
+            BigDecimal(lastRecord.percentage.value),
+            bodyFat.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateLeanBodyMassSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(LeanBodyMassRecord::class))
+        }.records as List<LeanBodyMassRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            leanBodyMass,
+            BigDecimal(lastRecord.mass.inKilograms),
+            leanBodyMass.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateBoneMassSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(BoneMassRecord::class))
+        }.records as List<BoneMassRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            boneMass,
+            BigDecimal(lastRecord.mass.inKilograms),
+            boneMass.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateBodyWaterMass(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(BodyWaterMassRecord::class))
+        }.records as List<BodyWaterMassRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            bodyWaterMass,
+            BigDecimal(lastRecord.mass.inKilograms),
+            bodyWaterMass.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
     override suspend fun getAvailableSensors(context: Context): List<SensorManager.BasicSensor> {
         return if (hasSensor(context)) {
             listOf(
@@ -519,6 +652,10 @@ class HealthConnectSensorManager : SensorManager {
                 bloodPressure,
                 basalBodyTemperature,
                 bodyTemperature,
+                bodyFat,
+                leanBodyMass,
+                boneMass,
+                bodyWaterMass,
             )
         } else {
             emptyList()

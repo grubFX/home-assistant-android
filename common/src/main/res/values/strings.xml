@@ -1300,4 +1300,12 @@
     <string name="sensor_description_body_temperature">The body temperature in degrees Celsius</string>
     <string name="basic_sensor_name_skin_temperature">Skin temperature</string>
     <string name="sensor_description_skin_temperature">The skin temperature in degrees Celsius</string>
+    <string name="basic_sensor_name_body_fat">Body fat</string>
+    <string name="sensor_description_body_fat">The body fat percentage</string>
+    <string name="basic_sensor_name_lean_body_mass">Lean body mass</string>
+    <string name="sensor_description_lean_body_mass">The lean body mass in kilograms</string>
+    <string name="basic_sensor_name_bone_mass">Bone mass</string>
+    <string name="sensor_description_bone_mass">The bone mass in kilograms</string>
+    <string name="basic_sensor_name_body_water_mass">Body water mass</string>
+    <string name="sensor_description_body_water_mass">The body water mass in kilograms</string>
 </resources>
