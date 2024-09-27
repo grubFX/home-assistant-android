@@ -8,6 +8,7 @@ import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.*
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -875,7 +876,7 @@ class HealthConnectSensorManager : SensorManager {
         val durationMinutes = duration.inWholeMinutes - (durationHours * 60)
         val durationSeconds = duration.inWholeSeconds - (durationMinutes * 60)
         val type = ExerciseSessionRecord.Companion::class.memberProperties.firstOrNull {
-            it.get(ExerciseSessionRecord.Companion) == lastRecord.exerciseType
+            it.get(ExerciseSessionRecord) == lastRecord.exerciseType
         }
         onSensorUpdated(
             context,
@@ -1035,65 +1036,65 @@ class HealthConnectSensorManager : SensorManager {
 
     private fun getActivityIcon(type: Int): String {
         return when (type) {
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BADMINTON -> "mdi:badminton"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BASEBALL -> "mdi:baseball-bat"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BASKETBALL -> "mdi:basketball"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BIKING -> "mdi:bike-fast"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BIKING_STATIONARY -> "mdi:bike"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BOOT_CAMP -> "mdi:weight-lifter"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BOXING -> "mdi:boxing-glove"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_CALISTHENICS -> "mdi:arm-flex"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_CRICKET -> "mdi:cricket"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_DANCING -> "mdi:dance-ballroom"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ELLIPTICAL -> "mdi:ellipse"
-// ExerciseSessionRecord.Companion.EXERCISE_TYPE_FENCING
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_FOOTBALL_AMERICAN -> "mdi:football"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_FOOTBALL_AUSTRALIAN -> "mdi:football-australian"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_FRISBEE_DISC -> "mdi:disc"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_GOLF -> "mdi:golf"
-// ExerciseSessionRecord.Companion.EXERCISE_TYPE_GUIDED_BREATHING
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_GYMNASTICS -> "mdi:gymnastics"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_HANDBALL -> "mdi:handball"
-// ExerciseSessionRecord.Companion.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_HIKING -> "mdi:hiking"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ICE_HOCKEY -> "mdi:hockey-sticks"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ICE_SKATING -> "mdi:skate"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_MARTIAL_ARTS -> "mdi:karate"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_PADDLING -> "mdi:rowing"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_PARAGLIDING -> "mdi:paragliding"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_PILATES -> "mdi:yoga"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RACQUETBALL -> "mdi:racquetball"
-// ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROCK_CLIMBING
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROLLER_HOCKEY -> "mdi:hockey-sticks"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROWING -> "mdi:rowing"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROWING_MACHINE -> "mdi:rowing"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUGBY -> "mdi:rugby"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUNNING -> "mdi:run-fast"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUNNING_TREADMILL -> "mdi:run"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SAILING -> "mdi:sail-boat"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SCUBA_DIVING -> "mdi:diving-scuba"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SKATING -> "mdi:roller-skate"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SKIING -> "mdi:ski"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SNOWBOARDING -> "mdi:snowboard"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SNOWSHOEING -> "mdi:snowshoeing"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SOCCER -> "mdi:soccer"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SOFTBALL -> "mdi:handball"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SQUASH -> "mdi:racquetball"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STAIR_CLIMBING -> "mdi:stairs-up"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE -> "mdi:stairs-up"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRENGTH_TRAINING -> "mdi:weight-lifter"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRETCHING -> "mdi:yoga"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SURFING -> "mdi:surfing"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> "mdi:swim"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SWIMMING_POOL -> "mdi:pool"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_TABLE_TENNIS -> "mdi:table-tennis"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_TENNIS -> "mdi:tennis"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_VOLLEYBALL -> "mdi:volleyball"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WALKING -> "mdi:walk"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WATER_POLO -> "mdi:water-polo"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WEIGHTLIFTING -> "mdi:weight-lifter"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WHEELCHAIR -> "mdi:wheelchair-accessibility"
-            ExerciseSessionRecord.Companion.EXERCISE_TYPE_YOGA -> "mdi:yoga"
+            ExerciseSessionRecord.EXERCISE_TYPE_BADMINTON -> "mdi:badminton"
+            ExerciseSessionRecord.EXERCISE_TYPE_BASEBALL -> "mdi:baseball-bat"
+            ExerciseSessionRecord.EXERCISE_TYPE_BASKETBALL -> "mdi:basketball"
+            ExerciseSessionRecord.EXERCISE_TYPE_BIKING -> "mdi:bike-fast"
+            ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY -> "mdi:bike"
+            ExerciseSessionRecord.EXERCISE_TYPE_BOOT_CAMP -> "mdi:weight-lifter"
+            ExerciseSessionRecord.EXERCISE_TYPE_BOXING -> "mdi:boxing-glove"
+            ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS -> "mdi:arm-flex"
+            ExerciseSessionRecord.EXERCISE_TYPE_CRICKET -> "mdi:cricket"
+            ExerciseSessionRecord.EXERCISE_TYPE_DANCING -> "mdi:dance-ballroom"
+            ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL -> "mdi:ellipse"
+// EXERCISE_TYPE_FENCING
+            ExerciseSessionRecord.EXERCISE_TYPE_FOOTBALL_AMERICAN -> "mdi:football"
+            ExerciseSessionRecord.EXERCISE_TYPE_FOOTBALL_AUSTRALIAN -> "mdi:football-australian"
+            ExerciseSessionRecord.EXERCISE_TYPE_FRISBEE_DISC -> "mdi:disc"
+            ExerciseSessionRecord.EXERCISE_TYPE_GOLF -> "mdi:golf"
+// EXERCISE_TYPE_GUIDED_BREATHING
+            ExerciseSessionRecord.EXERCISE_TYPE_GYMNASTICS -> "mdi:gymnastics"
+            ExerciseSessionRecord.EXERCISE_TYPE_HANDBALL -> "mdi:handball"
+// EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
+            ExerciseSessionRecord.EXERCISE_TYPE_HIKING -> "mdi:hiking"
+            ExerciseSessionRecord.EXERCISE_TYPE_ICE_HOCKEY -> "mdi:hockey-sticks"
+            ExerciseSessionRecord.EXERCISE_TYPE_ICE_SKATING -> "mdi:skate"
+            ExerciseSessionRecord.EXERCISE_TYPE_MARTIAL_ARTS -> "mdi:karate"
+            ExerciseSessionRecord.EXERCISE_TYPE_PADDLING -> "mdi:rowing"
+            ExerciseSessionRecord.EXERCISE_TYPE_PARAGLIDING -> "mdi:paragliding"
+            ExerciseSessionRecord.EXERCISE_TYPE_PILATES -> "mdi:yoga"
+            ExerciseSessionRecord.EXERCISE_TYPE_RACQUETBALL -> "mdi:racquetball"
+// EXERCISE_TYPE_ROCK_CLIMBING
+            ExerciseSessionRecord.EXERCISE_TYPE_ROLLER_HOCKEY -> "mdi:hockey-sticks"
+            ExerciseSessionRecord.EXERCISE_TYPE_ROWING -> "mdi:rowing"
+            ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE -> "mdi:rowing"
+            ExerciseSessionRecord.EXERCISE_TYPE_RUGBY -> "mdi:rugby"
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING -> "mdi:run-fast"
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL -> "mdi:run"
+            ExerciseSessionRecord.EXERCISE_TYPE_SAILING -> "mdi:sail-boat"
+            ExerciseSessionRecord.EXERCISE_TYPE_SCUBA_DIVING -> "mdi:diving-scuba"
+            ExerciseSessionRecord.EXERCISE_TYPE_SKATING -> "mdi:roller-skate"
+            ExerciseSessionRecord.EXERCISE_TYPE_SKIING -> "mdi:ski"
+            ExerciseSessionRecord.EXERCISE_TYPE_SNOWBOARDING -> "mdi:snowboard"
+            ExerciseSessionRecord.EXERCISE_TYPE_SNOWSHOEING -> "mdi:snowshoeing"
+            ExerciseSessionRecord.EXERCISE_TYPE_SOCCER -> "mdi:soccer"
+            ExerciseSessionRecord.EXERCISE_TYPE_SOFTBALL -> "mdi:handball"
+            ExerciseSessionRecord.EXERCISE_TYPE_SQUASH -> "mdi:racquetball"
+            ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING -> "mdi:stairs-up"
+            ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE -> "mdi:stairs-up"
+            ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING -> "mdi:weight-lifter"
+            ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING -> "mdi:yoga"
+            ExerciseSessionRecord.EXERCISE_TYPE_SURFING -> "mdi:surfing"
+            ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> "mdi:swim"
+            ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> "mdi:pool"
+            ExerciseSessionRecord.EXERCISE_TYPE_TABLE_TENNIS -> "mdi:table-tennis"
+            ExerciseSessionRecord.EXERCISE_TYPE_TENNIS -> "mdi:tennis"
+            ExerciseSessionRecord.EXERCISE_TYPE_VOLLEYBALL -> "mdi:volleyball"
+            ExerciseSessionRecord.EXERCISE_TYPE_WALKING -> "mdi:walk"
+            ExerciseSessionRecord.EXERCISE_TYPE_WATER_POLO -> "mdi:water-polo"
+            ExerciseSessionRecord.EXERCISE_TYPE_WEIGHTLIFTING -> "mdi:weight-lifter"
+            ExerciseSessionRecord.EXERCISE_TYPE_WHEELCHAIR -> "mdi:wheelchair-accessibility"
+            ExerciseSessionRecord.EXERCISE_TYPE_YOGA -> "mdi:yoga"
             else -> "mdi:run"
         }
     }
