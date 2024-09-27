@@ -1311,7 +1311,7 @@
     <string name="basic_sensor_name_steps">Steps</string>
     <string name="sensor_description_steps">The total number of steps taken</string>
     <string name="basic_sensor_name_distance">Distance</string>
-    <string name="sensor_description_distance">The total distance traveled in meters</string>
+    <string name="sensor_description_distance">The latest distance traveled in meters</string>
     <string name="basic_sensor_name_elevation_gain">Elevation gain</string>
     <string name="sensor_description_elevation_gain">The total elevation gain in meters</string>
     <string name="basic_sensor_name_floors_climbed">Floors climbed</string>
@@ -1322,4 +1322,8 @@
     <string name="sensor_description_height">The height in meters</string>
     <string name="basic_sensor_name_power">Power</string>
     <string name="sensor_description_power">The power in watts</string>
+    <string name="basic_sensor_name_speed">Speed</string>
+    <string name="sensor_description_speed">The speed in Kilometers per hour</string>
+    <string name="basic_sensor_name_vo2max">VO2 Max</string>
+    <string name="sensor_description_vo2max">The maximum amount of oxygen your body can take in and use during intense exercise</string>
 </resources>

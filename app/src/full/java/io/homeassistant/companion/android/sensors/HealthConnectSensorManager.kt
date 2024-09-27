@@ -7,6 +7,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.*
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -21,6 +22,7 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.milliseconds
 import io.homeassistant.companion.android.common.R as commonR
 
@@ -267,7 +269,6 @@ class HealthConnectSensorManager : SensorManager {
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
             deviceClass = "length"
         )
-
         var power = SensorManager.BasicSensor(
             id = "health_connect_power",
             type = "sensor",
@@ -278,6 +279,27 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
             deviceClass = "power"
+        )
+        var speed = SensorManager.BasicSensor(
+            id = "health_connect_speed",
+            type = "sensor",
+            commonR.string.basic_sensor_name_speed,
+            commonR.string.sensor_description_speed,
+            "mdi:speedometer",
+            unitOfMeasurement = "km/h",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "speed"
+        )
+        var vo2max = SensorManager.BasicSensor(
+            id = "health_connect_vo2max",
+            type = "sensor",
+            commonR.string.basic_sensor_name_vo2max,
+            commonR.string.sensor_description_vo2max,
+            "mdi:run-fast",
+            unitOfMeasurement = "mL/kg/min",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
     }
 
@@ -309,6 +331,8 @@ class HealthConnectSensorManager : SensorManager {
             exercise.id -> arrayOf(HealthPermission.getReadPermission(ExerciseSessionRecord::class))
             height.id -> arrayOf(HealthPermission.getReadPermission(HeightRecord::class))
             power.id -> arrayOf(HealthPermission.getReadPermission(PowerRecord::class))
+            speed.id -> arrayOf(HealthPermission.getReadPermission(SpeedRecord::class))
+            vo2max.id -> arrayOf(HealthPermission.getReadPermission(Vo2MaxRecord::class))
             else -> arrayOf()
         }
     }
@@ -384,6 +408,12 @@ class HealthConnectSensorManager : SensorManager {
         }
         if (isEnabled(context, power)) {
             updatePowerSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, speed)) {
+            updateSpeedSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, vo2max)) {
+            updateVo2MaxSensor(context, healthConnectClient)
         }
 
         previousSensorRequestTime = Instant.now()
@@ -844,13 +874,16 @@ class HealthConnectSensorManager : SensorManager {
         val durationHours = duration.inWholeHours
         val durationMinutes = duration.inWholeMinutes - (durationHours * 60)
         val durationSeconds = duration.inWholeSeconds - (durationMinutes * 60)
+        val type = ExerciseSessionRecord.Companion::class.memberProperties.firstOrNull {
+            it.get(ExerciseSessionRecord.Companion) == lastRecord.exerciseType
+        }
         onSensorUpdated(
             context,
             exercise,
             lastRecord.title as String,
-            exercise.statelessIcon,
+            getActivityIcon(lastRecord.exerciseType),
             attributes = mapOf(
-                "exerciseType" to lastRecord.exerciseType, //TODO convert to string somehow
+                "exerciseType" to type?.name,
                 "notes" to lastRecord.notes,
                 "duration" to "${durationHours}:${durationMinutes}:${durationSeconds}",
                 "startTime" to lastRecord.startTime,
@@ -913,6 +946,48 @@ class HealthConnectSensorManager : SensorManager {
         )
     }
 
+    private fun updateSpeedSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(SpeedRecord::class))
+        }.records as List<SpeedRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            speed,
+            BigDecimal(lastRecord.samples.last().speed.inKilometersPerHour).setScale(2, roundingMode),
+            speed.statelessIcon,
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
+        )
+    }
+
+    private fun updateVo2MaxSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(Vo2MaxRecord::class))
+        }.records as List<Vo2MaxRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            vo2max,
+            BigDecimal(lastRecord.vo2MillilitersPerMinuteKilogram).setScale(0, roundingMode),
+            vo2max.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
     override suspend fun getAvailableSensors(context: Context): List<SensorManager.BasicSensor> {
         return if (hasSensor(context)) {
             listOf(
@@ -937,7 +1012,9 @@ class HealthConnectSensorManager : SensorManager {
                 floorsClimbed,
                 exercise,
                 height,
-                power
+                power,
+                speed,
+                vo2max
             )
         } else {
             emptyList()
@@ -954,5 +1031,70 @@ class HealthConnectSensorManager : SensorManager {
             healthConnectClient.permissionController.getGrantedPermissions().containsAll(requiredPermissions(sensorId).toSet())
         }
         return result
+    }
+
+    private fun getActivityIcon(type: Int): String {
+        return when (type) {
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BADMINTON -> "mdi:badminton"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BASEBALL -> "mdi:baseball-bat"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BASKETBALL -> "mdi:basketball"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BIKING -> "mdi:bike-fast"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BIKING_STATIONARY -> "mdi:bike"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BOOT_CAMP -> "mdi:weight-lifter"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_BOXING -> "mdi:boxing-glove"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_CALISTHENICS -> "mdi:arm-flex"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_CRICKET -> "mdi:cricket"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_DANCING -> "mdi:dance-ballroom"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ELLIPTICAL -> "mdi:ellipse"
+// ExerciseSessionRecord.Companion.EXERCISE_TYPE_FENCING
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_FOOTBALL_AMERICAN -> "mdi:football"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_FOOTBALL_AUSTRALIAN -> "mdi:football-australian"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_FRISBEE_DISC -> "mdi:disc"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_GOLF -> "mdi:golf"
+// ExerciseSessionRecord.Companion.EXERCISE_TYPE_GUIDED_BREATHING
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_GYMNASTICS -> "mdi:gymnastics"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_HANDBALL -> "mdi:handball"
+// ExerciseSessionRecord.Companion.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_HIKING -> "mdi:hiking"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ICE_HOCKEY -> "mdi:hockey-sticks"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ICE_SKATING -> "mdi:skate"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_MARTIAL_ARTS -> "mdi:karate"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_PADDLING -> "mdi:rowing"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_PARAGLIDING -> "mdi:paragliding"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_PILATES -> "mdi:yoga"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RACQUETBALL -> "mdi:racquetball"
+// ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROCK_CLIMBING
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROLLER_HOCKEY -> "mdi:hockey-sticks"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROWING -> "mdi:rowing"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROWING_MACHINE -> "mdi:rowing"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUGBY -> "mdi:rugby"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUNNING -> "mdi:run-fast"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUNNING_TREADMILL -> "mdi:run"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SAILING -> "mdi:sail-boat"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SCUBA_DIVING -> "mdi:diving-scuba"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SKATING -> "mdi:roller-skate"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SKIING -> "mdi:ski"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SNOWBOARDING -> "mdi:snowboard"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SNOWSHOEING -> "mdi:snowshoeing"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SOCCER -> "mdi:soccer"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SOFTBALL -> "mdi:handball"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SQUASH -> "mdi:racquetball"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STAIR_CLIMBING -> "mdi:stairs-up"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE -> "mdi:stairs-up"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRENGTH_TRAINING -> "mdi:weight-lifter"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRETCHING -> "mdi:yoga"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SURFING -> "mdi:surfing"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> "mdi:swim"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_SWIMMING_POOL -> "mdi:pool"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_TABLE_TENNIS -> "mdi:table-tennis"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_TENNIS -> "mdi:tennis"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_VOLLEYBALL -> "mdi:volleyball"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WALKING -> "mdi:walk"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WATER_POLO -> "mdi:water-polo"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WEIGHTLIFTING -> "mdi:weight-lifter"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_WHEELCHAIR -> "mdi:wheelchair-accessibility"
+            ExerciseSessionRecord.Companion.EXERCISE_TYPE_YOGA -> "mdi:yoga"
+            else -> "mdi:run"
+        }
     }
 }
