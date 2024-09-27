@@ -1288,4 +1288,6 @@
     <string name="sensor_description_heart_rate_variability">The variation in time between consecutive heartbeats</string>
     <string name="basic_sensor_name_oxygen_saturation">Blood oxygen saturation (SpO2)</string>
     <string name="sensor_description_oxygen_saturation">The percentage of oxygen saturation in the blood</string>
+    <string name="basic_sensor_name_resting_heart_rate">Resting heart rate</string>
+    <string name="sensor_description_resting_heart_rate">The resting heart rate in beats per minute</string>
 </resources>

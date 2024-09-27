@@ -4,13 +4,14 @@ import android.content.Context
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.*
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
-import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.sensors.SensorManager
+import kotlinx.coroutines.runBlocking
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -19,11 +20,13 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
-import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
+import io.homeassistant.companion.android.common.R as commonR
 
 class HealthConnectSensorManager : SensorManager {
     companion object {
+        var previousSensorRequestTime: Instant = Instant.now().minus(30, ChronoUnit.DAYS);
+
         val activeCaloriesBurned = SensorManager.BasicSensor(
             id = "health_connect_active_calories_burned",
             type = "sensor",
@@ -80,12 +83,23 @@ class HealthConnectSensorManager : SensorManager {
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
 
+        val restingHeartRate = SensorManager.BasicSensor(
+            id = "health_connect_resting_heart_rate",
+            type = "sensor",
+            commonR.string.basic_sensor_name_resting_heart_rate,
+            commonR.string.sensor_description_resting_heart_rate,
+            "mdi:heart-pulse",
+            unitOfMeasurement = "bpm",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+
         val oxygenSaturation = SensorManager.BasicSensor(
             id = "health_connect_oxygen_saturation",
             type = "sensor",
             commonR.string.basic_sensor_name_oxygen_saturation,
             commonR.string.sensor_description_oxygen_saturation,
-            "mdi:heart-plus-outline",
+            "mdi:water-opacity",
             unitOfMeasurement = "%",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -102,6 +116,7 @@ class HealthConnectSensorManager : SensorManager {
             weight.id -> arrayOf(HealthPermission.getReadPermission(WeightRecord::class))
             heartRate.id -> arrayOf(HealthPermission.getReadPermission(HeartRateRecord::class))
             heartRateVariability.id -> arrayOf(HealthPermission.getReadPermission(HeartRateVariabilityRmssdRecord::class))
+            restingHeartRate.id -> arrayOf(HealthPermission.getReadPermission(RestingHeartRateRecord::class))
             oxygenSaturation.id -> arrayOf(HealthPermission.getReadPermission(OxygenSaturationRecord::class))
             else -> arrayOf()
         }
@@ -125,16 +140,23 @@ class HealthConnectSensorManager : SensorManager {
         if (isEnabled(context, heartRateVariability)) {
             updateHeartRateVariabilitySensor(context, healthConnectClient)
         }
+        if (isEnabled(context, restingHeartRate)) {
+            updateRestingHeartRateSensor(context, healthConnectClient)
+        }
         if (isEnabled(context, oxygenSaturation)) {
             updateOxygenSaturationSensor(context, healthConnectClient)
         }
+
+        previousSensorRequestTime = Instant.now()
     }
 
-    private fun buildReadRecordsRequest(recordType: KClass<out Record>): ReadRecordsRequest<out Record> {
+    private fun buildReadRecordsRequest(
+        recordType: KClass<out Record>,
+    ): ReadRecordsRequest<out Record> {
         return ReadRecordsRequest(
             recordType,
             timeRangeFilter = TimeRangeFilter.between(
-                Instant.now().minus(30, ChronoUnit.DAYS),
+                previousSensorRequestTime,
                 Instant.now()
             ),
             ascendingOrder = false,
@@ -142,17 +164,22 @@ class HealthConnectSensorManager : SensorManager {
         )
     }
 
+    private fun <T : Any> buildAggregateRequest(
+        aggregateMetric: AggregateMetric<T>,
+        startTime: LocalTime = LocalTime.MIDNIGHT
+    ): AggregateRequest {
+        return AggregateRequest(
+            metrics = setOf(aggregateMetric),
+            timeRangeFilter = TimeRangeFilter.between(
+                LocalDateTime.of(LocalDate.now(), startTime),
+                LocalDateTime.of(LocalDate.now(), LocalTime.now())
+            )
+        )
+    }
+
     private fun updateTotalCaloriesBurnedSensor(context: Context, healthConnectClient: HealthConnectClient) {
         val totalCaloriesBurnedRequest = runBlocking {
-            healthConnectClient.aggregate(
-                AggregateRequest(
-                    metrics = setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL),
-                    timeRangeFilter = TimeRangeFilter.between(
-                        LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT),
-                        LocalDateTime.of(LocalDate.now(), LocalTime.now())
-                    )
-                )
-            )
+            healthConnectClient.aggregate(buildAggregateRequest(TotalCaloriesBurnedRecord.ENERGY_TOTAL))
         }
         totalCaloriesBurnedRequest[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.let {
             onSensorUpdated(
@@ -172,12 +199,16 @@ class HealthConnectSensorManager : SensorManager {
         if (records.isEmpty()) {
             return
         }
+        val lastRecord = records.last()
         onSensorUpdated(
             context,
             weight,
-            BigDecimal(records.last().weight.inKilograms).setScale(3, RoundingMode.HALF_EVEN),
+            BigDecimal(lastRecord.weight.inKilograms).setScale(3, RoundingMode.HALF_EVEN),
             weight.statelessIcon,
-            attributes = mapOf("date" to records.last().time)
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "oneOffset" to lastRecord.zoneOffset,
+            )
         )
     }
 
@@ -188,12 +219,18 @@ class HealthConnectSensorManager : SensorManager {
         if (records.isEmpty()) {
             return
         }
+        val lastRecord = records.last()
         onSensorUpdated(
             context,
             activeCaloriesBurned,
-            BigDecimal(records.last().energy.inKilocalories).setScale(2, RoundingMode.HALF_EVEN),
+            BigDecimal(lastRecord.energy.inKilocalories).setScale(2, RoundingMode.HALF_EVEN),
             activeCaloriesBurned.statelessIcon,
-            attributes = mapOf("endTime" to records.last().endTime)
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
         )
     }
 
@@ -204,12 +241,18 @@ class HealthConnectSensorManager : SensorManager {
         if (records.isEmpty()) {
             return
         }
+        val lastRecord = records.last()
         onSensorUpdated(
             context,
             heartRate,
-            BigDecimal(records.last().samples.last().beatsPerMinute),
+            BigDecimal(lastRecord.samples.last().beatsPerMinute),
             heartRate.statelessIcon,
-            attributes = mapOf("endTime" to records.last().endTime)
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
         )
     }
 
@@ -220,12 +263,36 @@ class HealthConnectSensorManager : SensorManager {
         if (records.isEmpty()) {
             return
         }
+        val lastRecord = records.last()
         onSensorUpdated(
             context,
             heartRateVariability,
-            BigDecimal(records.last().heartRateVariabilityMillis),
+            BigDecimal(lastRecord.heartRateVariabilityMillis),
             heartRateVariability.statelessIcon,
-            attributes = mapOf("endTime" to records.last().time)
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateRestingHeartRateSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(RestingHeartRateRecord::class))
+        }.records as List<RestingHeartRateRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            restingHeartRate,
+            BigDecimal(lastRecord.beatsPerMinute),
+            restingHeartRate.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
         )
     }
 
@@ -236,19 +303,29 @@ class HealthConnectSensorManager : SensorManager {
         if (records.isEmpty()) {
             return
         }
+        val lastRecord = records.last()
         onSensorUpdated(
             context,
             oxygenSaturation,
-            records.last().percentage,
+            BigDecimal(lastRecord.percentage.value),
             oxygenSaturation.statelessIcon,
-            attributes = mapOf("endTime" to records.last().time)
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
         )
     }
 
     override suspend fun getAvailableSensors(context: Context): List<SensorManager.BasicSensor> {
         return if (hasSensor(context)) {
             listOf(
-                activeCaloriesBurned, totalCaloriesBurned, weight, heartRate, heartRateVariability, oxygenSaturation
+                activeCaloriesBurned,
+                totalCaloriesBurned,
+                weight,
+                heartRate,
+                heartRateVariability,
+                restingHeartRate,
+                oxygenSaturation
             )
         } else {
             emptyList()
