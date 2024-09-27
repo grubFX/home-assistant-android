@@ -25,7 +25,8 @@ import io.homeassistant.companion.android.common.R as commonR
 
 class HealthConnectSensorManager : SensorManager {
     companion object {
-        var previousSensorRequestTime: Instant = Instant.now().minus(30, ChronoUnit.DAYS);
+        var previousSensorRequestTime: Instant = Instant.now().minus(30, ChronoUnit.DAYS)
+        val roundingMode = RoundingMode.HALF_EVEN
 
         // caloric sensors
         val activeCaloriesBurned = SensorManager.BasicSensor(
@@ -201,6 +202,29 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
+
+        // exercise / step / activity sensors
+        val steps = SensorManager.BasicSensor(
+            id = "health_connect_steps",
+            type = "sensor",
+            commonR.string.basic_sensor_name_steps,
+            commonR.string.sensor_description_steps,
+            "mdi:walk",
+            unitOfMeasurement = "steps",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+
+        val distance = SensorManager.BasicSensor(
+            id = "health_connect_distance",
+            type = "sensor",
+            commonR.string.basic_sensor_name_distance,
+            commonR.string.sensor_description_distance,
+            "mdi:map-marker-distance",
+            unitOfMeasurement = "m",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
     }
 
     override val name: Int
@@ -224,6 +248,8 @@ class HealthConnectSensorManager : SensorManager {
             leanBodyMass.id -> arrayOf(HealthPermission.getReadPermission(LeanBodyMassRecord::class))
             boneMass.id -> arrayOf(HealthPermission.getReadPermission(BoneMassRecord::class))
             bodyWaterMass.id -> arrayOf(HealthPermission.getReadPermission(BodyWaterMassRecord::class))
+            steps.id -> arrayOf(HealthPermission.getReadPermission(StepsRecord::class))
+            distance.id -> arrayOf(HealthPermission.getReadPermission(DistanceRecord::class))
             else -> arrayOf()
         }
     }
@@ -279,6 +305,12 @@ class HealthConnectSensorManager : SensorManager {
         if (isEnabled(context, bodyWaterMass)) {
             updateBodyWaterMass(context, healthConnectClient)
         }
+        if (isEnabled(context, steps)) {
+            updateStepsSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, distance)) {
+            updateDistanceSensor(context, healthConnectClient)
+        }
 
         previousSensorRequestTime = Instant.now()
     }
@@ -318,7 +350,7 @@ class HealthConnectSensorManager : SensorManager {
             onSensorUpdated(
                 context,
                 totalCaloriesBurned,
-                BigDecimal(it.inKilocalories).setScale(2, RoundingMode.HALF_EVEN),
+                BigDecimal(it.inKilocalories).setScale(2, roundingMode),
                 totalCaloriesBurned.statelessIcon,
                 attributes = mapOf("endTime" to LocalDateTime.of(LocalDate.now(), LocalTime.now()).toInstant(ZoneOffset.UTC))
             )
@@ -336,7 +368,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             weight,
-            BigDecimal(lastRecord.weight.inKilograms).setScale(3, RoundingMode.HALF_EVEN),
+            BigDecimal(lastRecord.weight.inKilograms).setScale(3, roundingMode),
             weight.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -356,7 +388,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             activeCaloriesBurned,
-            BigDecimal(lastRecord.energy.inKilocalories).setScale(2, RoundingMode.HALF_EVEN),
+            BigDecimal(lastRecord.energy.inKilocalories).setScale(0, roundingMode),
             activeCaloriesBurned.statelessIcon,
             attributes = mapOf(
                 "startTime" to lastRecord.startTime,
@@ -378,7 +410,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             heartRate,
-            BigDecimal(lastRecord.samples.last().beatsPerMinute),
+            BigDecimal(lastRecord.samples.last().beatsPerMinute).setScale(0, roundingMode),
             heartRate.statelessIcon,
             attributes = mapOf(
                 "startTime" to lastRecord.startTime,
@@ -400,7 +432,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             heartRateVariability,
-            BigDecimal(lastRecord.heartRateVariabilityMillis),
+            BigDecimal(lastRecord.heartRateVariabilityMillis).setScale(0, roundingMode),
             heartRateVariability.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -420,7 +452,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             restingHeartRate,
-            BigDecimal(lastRecord.beatsPerMinute),
+            BigDecimal(lastRecord.beatsPerMinute).setScale(0, roundingMode),
             restingHeartRate.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -440,7 +472,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             oxygenSaturation,
-            BigDecimal(lastRecord.percentage.value),
+            BigDecimal(lastRecord.percentage.value).setScale(0, roundingMode),
             oxygenSaturation.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -460,7 +492,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             bloodGlucose,
-            BigDecimal(lastRecord.level.inMilligramsPerDeciliter),
+            BigDecimal(lastRecord.level.inMilligramsPerDeciliter).setScale(0, roundingMode),
             bloodGlucose.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -481,13 +513,13 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             bloodPressure,
-            BigDecimal(systolic),
+            BigDecimal(systolic).setScale(0, roundingMode),
             bloodPressure.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
                 "zoneOffset" to lastRecord.zoneOffset,
-                "systolic" to BigDecimal(systolic),
-                "diastolic" to BigDecimal(lastRecord.diastolic.inMillimetersOfMercury)
+                "systolic" to BigDecimal(systolic).setScale(0),
+                "diastolic" to BigDecimal(lastRecord.diastolic.inMillimetersOfMercury).setScale(0)
             )
         )
     }
@@ -503,7 +535,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             basalBodyTemperature,
-            BigDecimal(lastRecord.temperature.inCelsius),
+            BigDecimal(lastRecord.temperature.inCelsius).setScale(1, roundingMode),
             basalBodyTemperature.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -524,7 +556,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             bodyTemperature,
-            BigDecimal(lastRecord.temperature.inCelsius),
+            BigDecimal(lastRecord.temperature.inCelsius).setScale(1, roundingMode),
             bodyTemperature.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -546,7 +578,7 @@ class HealthConnectSensorManager : SensorManager {
 //        onSensorUpdated(
 //            context,
 //            skinTemperature,
-//            BigDecimal(lastRecord.baseline.inCelsius),
+//            BigDecimal(lastRecord.baseline.inCelsius).setScale(1, roundingMode),
 //            skinTemperature.statelessIcon,
 //            attributes = mapOf(
 //                "startTime" to lastRecord.startTime,
@@ -569,7 +601,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             bodyFat,
-            BigDecimal(lastRecord.percentage.value),
+            BigDecimal(lastRecord.percentage.value).setScale(1, roundingMode),
             bodyFat.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -589,7 +621,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             leanBodyMass,
-            BigDecimal(lastRecord.mass.inKilograms),
+            BigDecimal(lastRecord.mass.inKilograms).setScale(3, roundingMode),
             leanBodyMass.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -609,7 +641,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             boneMass,
-            BigDecimal(lastRecord.mass.inKilograms),
+            BigDecimal(lastRecord.mass.inKilograms).setScale(3, roundingMode),
             boneMass.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -629,11 +661,55 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             bodyWaterMass,
-            BigDecimal(lastRecord.mass.inKilograms),
+            BigDecimal(lastRecord.mass.inKilograms).setScale(3, roundingMode),
             bodyWaterMass.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
                 "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateStepsSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(StepsRecord::class))
+        }.records as List<StepsRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            steps,
+            BigDecimal(lastRecord.count).setScale(0, roundingMode),
+            steps.statelessIcon,
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
+        )
+    }
+
+    private fun updateDistanceSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(DistanceRecord::class))
+        }.records as List<DistanceRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            distance,
+            BigDecimal(lastRecord.distance.inMeters).setScale(0, roundingMode),
+            distance.statelessIcon,
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
             )
         )
     }
@@ -656,6 +732,8 @@ class HealthConnectSensorManager : SensorManager {
                 leanBodyMass,
                 boneMass,
                 bodyWaterMass,
+                steps,
+                distance
             )
         } else {
             emptyList()

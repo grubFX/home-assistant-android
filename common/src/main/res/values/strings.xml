@@ -1308,4 +1308,8 @@
     <string name="sensor_description_bone_mass">The bone mass in kilograms</string>
     <string name="basic_sensor_name_body_water_mass">Body water mass</string>
     <string name="sensor_description_body_water_mass">The body water mass in kilograms</string>
+    <string name="basic_sensor_name_steps">Steps</string>
+    <string name="sensor_description_steps">The total number of steps taken</string>
+    <string name="basic_sensor_name_distance">Distance</string>
+    <string name="sensor_description_distance">The total distance traveled in meters</string>
 </resources>
