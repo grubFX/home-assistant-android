@@ -1290,4 +1290,14 @@
     <string name="sensor_description_oxygen_saturation">The percentage of oxygen saturation in the blood</string>
     <string name="basic_sensor_name_resting_heart_rate">Resting heart rate</string>
     <string name="sensor_description_resting_heart_rate">The resting heart rate in beats per minute</string>
+    <string name="basic_sensor_name_blood_glucose">Blood glucose</string>
+    <string name="sensor_description_blood_glucose">The blood glucose level in milligrams per deciliter</string>
+    <string name="basic_sensor_name_blood_pressure">Blood pressure</string>
+    <string name="sensor_description_blood_pressure">The blood pressure in millimeters of mercury</string>
+    <string name="basic_sensor_name_basal_body_temperature">Basal body temperature</string>
+    <string name="sensor_description_basal_body_temperature">The basal body temperature in degrees Celsius</string>
+    <string name="basic_sensor_name_body_temperature">Body temperature</string>
+    <string name="sensor_description_body_temperature">The body temperature in degrees Celsius</string>
+    <string name="basic_sensor_name_skin_temperature">Skin temperature</string>
+    <string name="sensor_description_skin_temperature">The skin temperature in degrees Celsius</string>
 </resources>
