@@ -21,6 +21,7 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.milliseconds
 import io.homeassistant.companion.android.common.R as commonR
 
 class HealthConnectSensorManager : SensorManager {
@@ -56,7 +57,7 @@ class HealthConnectSensorManager : SensorManager {
             type = "sensor",
             commonR.string.basic_sensor_name_weight,
             commonR.string.sensor_description_weight,
-            "mdi:weight",
+            "mdi:scale-bathroom",
             unitOfMeasurement = "kg",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -67,7 +68,7 @@ class HealthConnectSensorManager : SensorManager {
             type = "sensor",
             commonR.string.basic_sensor_name_body_fat,
             commonR.string.sensor_description_body_fat,
-            "mdi:weight",
+            "mdi:percent",
             unitOfMeasurement = "%",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -78,7 +79,7 @@ class HealthConnectSensorManager : SensorManager {
             type = "sensor",
             commonR.string.basic_sensor_name_lean_body_mass,
             commonR.string.sensor_description_lean_body_mass,
-            "mdi:weight",
+            "mdi:weight-kilogram",
             unitOfMeasurement = "kg",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -89,7 +90,7 @@ class HealthConnectSensorManager : SensorManager {
             type = "sensor",
             commonR.string.basic_sensor_name_bone_mass,
             commonR.string.sensor_description_bone_mass,
-            "mdi:weight",
+            "mdi:weight-kilogram",
             unitOfMeasurement = "kg",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -100,7 +101,7 @@ class HealthConnectSensorManager : SensorManager {
             type = "sensor",
             commonR.string.basic_sensor_name_body_water_mass,
             commonR.string.sensor_description_body_water_mass,
-            "mdi:weight",
+            "mdi:weight-kilogram",
             unitOfMeasurement = "kg",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -214,7 +215,6 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
-
         val distance = SensorManager.BasicSensor(
             id = "health_connect_distance",
             type = "sensor",
@@ -224,6 +224,60 @@ class HealthConnectSensorManager : SensorManager {
             unitOfMeasurement = "m",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val elevationGain = SensorManager.BasicSensor(
+            id = "health_connect_elevation_gain",
+            type = "sensor",
+            commonR.string.basic_sensor_name_elevation_gain,
+            commonR.string.sensor_description_elevation_gain,
+            "mdi:elevation-rise",
+            unitOfMeasurement = "m",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val floorsClimbed = SensorManager.BasicSensor(
+            id = "health_connect_floors_climbed",
+            type = "sensor",
+            commonR.string.basic_sensor_name_floors_climbed,
+            commonR.string.sensor_description_floors_climbed,
+            "mdi:stairs-up",
+            unitOfMeasurement = "floors",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val exercise = SensorManager.BasicSensor(
+            id = "health_connect_exercise",
+            type = "sensor",
+            commonR.string.basic_sensor_name_exercise,
+            commonR.string.sensor_description_exercise,
+            "mdi:run",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+
+        // miscellaneous sensors
+        val height = SensorManager.BasicSensor(
+            id = "health_connect_height",
+            type = "sensor",
+            commonR.string.basic_sensor_name_height,
+            commonR.string.sensor_description_height,
+            "mdi:ruler",
+            unitOfMeasurement = "cm",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "length"
+        )
+
+        var power = SensorManager.BasicSensor(
+            id = "health_connect_power",
+            type = "sensor",
+            commonR.string.basic_sensor_name_power,
+            commonR.string.sensor_description_power,
+            "mdi:lightning-bolt",
+            unitOfMeasurement = "W",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+            deviceClass = "power"
         )
     }
 
@@ -250,6 +304,11 @@ class HealthConnectSensorManager : SensorManager {
             bodyWaterMass.id -> arrayOf(HealthPermission.getReadPermission(BodyWaterMassRecord::class))
             steps.id -> arrayOf(HealthPermission.getReadPermission(StepsRecord::class))
             distance.id -> arrayOf(HealthPermission.getReadPermission(DistanceRecord::class))
+            elevationGain.id -> arrayOf(HealthPermission.getReadPermission(ElevationGainedRecord::class))
+            floorsClimbed.id -> arrayOf(HealthPermission.getReadPermission(FloorsClimbedRecord::class))
+            exercise.id -> arrayOf(HealthPermission.getReadPermission(ExerciseSessionRecord::class))
+            height.id -> arrayOf(HealthPermission.getReadPermission(HeightRecord::class))
+            power.id -> arrayOf(HealthPermission.getReadPermission(PowerRecord::class))
             else -> arrayOf()
         }
     }
@@ -311,6 +370,21 @@ class HealthConnectSensorManager : SensorManager {
         if (isEnabled(context, distance)) {
             updateDistanceSensor(context, healthConnectClient)
         }
+        if (isEnabled(context, elevationGain)) {
+            updateElevationGainSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, floorsClimbed)) {
+            updateFloorsClimbedSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, exercise)) {
+            updateExerciseSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, height)) {
+            updateHeightSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, power)) {
+            updatePowerSensor(context, healthConnectClient)
+        }
 
         previousSensorRequestTime = Instant.now()
     }
@@ -350,7 +424,7 @@ class HealthConnectSensorManager : SensorManager {
             onSensorUpdated(
                 context,
                 totalCaloriesBurned,
-                BigDecimal(it.inKilocalories).setScale(2, roundingMode),
+                BigDecimal(it.inKilocalories).setScale(0, roundingMode),
                 totalCaloriesBurned.statelessIcon,
                 attributes = mapOf("endTime" to LocalDateTime.of(LocalDate.now(), LocalTime.now()).toInstant(ZoneOffset.UTC))
             )
@@ -368,7 +442,7 @@ class HealthConnectSensorManager : SensorManager {
         onSensorUpdated(
             context,
             weight,
-            BigDecimal(lastRecord.weight.inKilograms).setScale(3, roundingMode),
+            BigDecimal(lastRecord.weight.inKilograms).setScale(2, roundingMode),
             weight.statelessIcon,
             attributes = mapOf(
                 "time" to lastRecord.time,
@@ -714,6 +788,131 @@ class HealthConnectSensorManager : SensorManager {
         )
     }
 
+    private fun updateElevationGainSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(ElevationGainedRecord::class))
+        }.records as List<ElevationGainedRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            elevationGain,
+            BigDecimal(lastRecord.elevation.inMeters).setScale(0, roundingMode),
+            elevationGain.statelessIcon,
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
+        )
+    }
+
+    private fun updateFloorsClimbedSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(FloorsClimbedRecord::class))
+        }.records as List<FloorsClimbedRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            floorsClimbed,
+            BigDecimal(lastRecord.floors).setScale(0, roundingMode),
+            floorsClimbed.statelessIcon,
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
+        )
+    }
+
+    private fun updateExerciseSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(ExerciseSessionRecord::class))
+        }.records as List<ExerciseSessionRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        val duration = (lastRecord.endTime.toEpochMilli() - lastRecord.startTime.toEpochMilli()).milliseconds
+        val durationHours = duration.inWholeHours
+        val durationMinutes = duration.inWholeMinutes - (durationHours * 60)
+        val durationSeconds = duration.inWholeSeconds - (durationMinutes * 60)
+        onSensorUpdated(
+            context,
+            exercise,
+            lastRecord.title as String,
+            exercise.statelessIcon,
+            attributes = mapOf(
+                "exerciseType" to lastRecord.exerciseType, //TODO convert to string somehow
+                "notes" to lastRecord.notes,
+                "duration" to "${durationHours}:${durationMinutes}:${durationSeconds}",
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset,
+                if (lastRecord.laps.isNotEmpty()) {
+                    "laps" to lastRecord.laps.joinToString(",\n") { lap -> lap.toString() }
+                } else {
+                    "laps" to ""
+                },
+                if (lastRecord.segments.isNotEmpty()) {
+                    "segments" to lastRecord.segments.joinToString(",\n") { segment -> segment.toString() }
+                } else {
+                    "segments" to ""
+                }
+            )
+        )
+    }
+
+    private fun updateHeightSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(HeightRecord::class))
+        }.records as List<HeightRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            height,
+            BigDecimal(lastRecord.height.inMeters).setScale(2, roundingMode),
+            height.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updatePowerSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(PowerRecord::class))
+        }.records as List<PowerRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            power,
+            BigDecimal(lastRecord.samples.last().power.inWatts).setScale(0, roundingMode),
+            power.statelessIcon,
+            attributes = mapOf(
+                "startTime" to lastRecord.startTime,
+                "startZoneOffset" to lastRecord.startZoneOffset,
+                "endTime" to lastRecord.endTime,
+                "endZoneOffset" to lastRecord.endZoneOffset
+            )
+        )
+    }
+
     override suspend fun getAvailableSensors(context: Context): List<SensorManager.BasicSensor> {
         return if (hasSensor(context)) {
             listOf(
@@ -733,7 +932,12 @@ class HealthConnectSensorManager : SensorManager {
                 boneMass,
                 bodyWaterMass,
                 steps,
-                distance
+                distance,
+                elevationGain,
+                floorsClimbed,
+                exercise,
+                height,
+                power
             )
         } else {
             emptyList()

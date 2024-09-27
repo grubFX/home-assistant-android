@@ -1312,4 +1312,14 @@
     <string name="sensor_description_steps">The total number of steps taken</string>
     <string name="basic_sensor_name_distance">Distance</string>
     <string name="sensor_description_distance">The total distance traveled in meters</string>
+    <string name="basic_sensor_name_elevation_gain">Elevation gain</string>
+    <string name="sensor_description_elevation_gain">The total elevation gain in meters</string>
+    <string name="basic_sensor_name_floors_climbed">Floors climbed</string>
+    <string name="sensor_description_floors_climbed">The total number of floors climbed</string>
+    <string name="basic_sensor_name_exercise">Latest Exercise</string>
+    <string name="sensor_description_exercise">Information about the latest exercise</string>
+    <string name="basic_sensor_name_height">Height</string>
+    <string name="sensor_description_height">The height in meters</string>
+    <string name="basic_sensor_name_power">Power</string>
+    <string name="sensor_description_power">The power in watts</string>
 </resources>
