@@ -159,7 +159,7 @@ class HealthConnectSensorManager : SensorManager {
             type = "sensor",
             commonR.string.basic_sensor_name_blood_glucose,
             commonR.string.sensor_description_blood_glucose,
-            "mdi:water",
+            "mdi:diabetes",
             unitOfMeasurement = "mg/dL",
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
@@ -302,6 +302,53 @@ class HealthConnectSensorManager : SensorManager {
             entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
             updateType = SensorManager.BasicSensor.UpdateType.WORKER,
         )
+
+        // reproductive health sensors
+        val cervicalMucus = SensorManager.BasicSensor(
+            id = "health_connect_cervical_mucus",
+            type = "sensor",
+            commonR.string.basic_sensor_name_cervical_mucus,
+            commonR.string.sensor_description_cervical_mucus,
+            "mdi:liquid-spot",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val intermenstrualBleeding = SensorManager.BasicSensor(
+            id = "health_connect_intermenstrual_bleeding",
+            type = "sensor",
+            commonR.string.basic_sensor_name_intermenstrual_bleeding,
+            commonR.string.sensor_description_intermenstrual_bleeding,
+            "mdi:water",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val menstruation = SensorManager.BasicSensor(
+            id = "health_connect_menstruation",
+            type = "sensor",
+            commonR.string.basic_sensor_name_menstruation,
+            commonR.string.sensor_description_menstruation,
+            "mdi:water",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val ovulationTest = SensorManager.BasicSensor(
+            id = "health_connect_ovulation_test",
+            type = "sensor",
+            commonR.string.basic_sensor_name_ovulation_test,
+            commonR.string.sensor_description_ovulation_test,
+            "mdi:egg",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
+        val sexualActivity = SensorManager.BasicSensor(
+            id = "health_connect_sexual_activity",
+            type = "sensor",
+            commonR.string.basic_sensor_name_sexual_activity,
+            commonR.string.sensor_description_sexual_activity,
+            "mdi:reproduction",
+            entityCategory = SensorManager.ENTITY_CATEGORY_DIAGNOSTIC,
+            updateType = SensorManager.BasicSensor.UpdateType.WORKER,
+        )
     }
 
     override val name: Int
@@ -334,6 +381,11 @@ class HealthConnectSensorManager : SensorManager {
             power.id -> arrayOf(HealthPermission.getReadPermission(PowerRecord::class))
             speed.id -> arrayOf(HealthPermission.getReadPermission(SpeedRecord::class))
             vo2max.id -> arrayOf(HealthPermission.getReadPermission(Vo2MaxRecord::class))
+            cervicalMucus.id -> arrayOf(HealthPermission.getReadPermission(CervicalMucusRecord::class))
+            intermenstrualBleeding.id -> arrayOf(HealthPermission.getReadPermission(IntermenstrualBleedingRecord::class))
+            menstruation.id -> arrayOf(HealthPermission.getReadPermission(MenstruationFlowRecord::class), HealthPermission.getReadPermission(MenstruationPeriodRecord::class))
+            ovulationTest.id -> arrayOf(HealthPermission.getReadPermission(OvulationTestRecord::class))
+            sexualActivity.id -> arrayOf(HealthPermission.getReadPermission(SexualActivityRecord::class))
             else -> arrayOf()
         }
     }
@@ -415,6 +467,21 @@ class HealthConnectSensorManager : SensorManager {
         }
         if (isEnabled(context, vo2max)) {
             updateVo2MaxSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, cervicalMucus)) {
+            updateCervicalMucusSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, intermenstrualBleeding)) {
+            updateIntermenstrualBleedingSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, menstruation)) {
+            updateMenstruationSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, ovulationTest)) {
+            updateOvulationTestSensor(context, healthConnectClient)
+        }
+        if (isEnabled(context, sexualActivity)) {
+            updateSexualActivitySensor(context, healthConnectClient)
         }
 
         previousSensorRequestTime = Instant.now()
@@ -989,6 +1056,116 @@ class HealthConnectSensorManager : SensorManager {
         )
     }
 
+    private fun updateCervicalMucusSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(CervicalMucusRecord::class))
+        }.records as List<CervicalMucusRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            cervicalMucus,
+            CervicalMucusRecord.Companion::class.memberProperties.firstOrNull {
+                it.get(CervicalMucusRecord) == lastRecord.appearance
+            }.toString(),
+            cervicalMucus.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+                "sensation" to CervicalMucusRecord.Companion::class.memberProperties.firstOrNull {
+                    it.get(CervicalMucusRecord) == lastRecord.sensation
+                }.toString()
+            )
+        )
+    }
+
+    private fun updateIntermenstrualBleedingSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(IntermenstrualBleedingRecord::class))
+        }.records as List<IntermenstrualBleedingRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            intermenstrualBleeding,
+            lastRecord.time,
+            intermenstrualBleeding.statelessIcon,
+            attributes = mapOf(
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateMenstruationSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(MenstruationFlowRecord::class))
+        }.records as List<MenstruationFlowRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            menstruation,
+            MenstruationFlowRecord.Companion::class.memberProperties.firstOrNull {
+                it.get(MenstruationFlowRecord) == lastRecord.flow
+            }.toString(),
+            menstruation.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateOvulationTestSensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(OvulationTestRecord::class))
+        }.records as List<OvulationTestRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            ovulationTest,
+            OvulationTestRecord.Companion::class.memberProperties.firstOrNull {
+                it.get(OvulationTestRecord) == lastRecord.result
+            }.toString(),
+            ovulationTest.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
+    private fun updateSexualActivitySensor(context: Context, healthConnectClient: HealthConnectClient) {
+        val records = runBlocking {
+            healthConnectClient.readRecords(buildReadRecordsRequest(SexualActivityRecord::class))
+        }.records as List<SexualActivityRecord>
+        if (records.isEmpty()) {
+            return
+        }
+        val lastRecord = records.last()
+        onSensorUpdated(
+            context,
+            sexualActivity,
+            SexualActivityRecord.Companion::class.memberProperties.firstOrNull {
+                it.get(SexualActivityRecord) == lastRecord.protectionUsed
+            }.toString(),
+            sexualActivity.statelessIcon,
+            attributes = mapOf(
+                "time" to lastRecord.time,
+                "zoneOffset" to lastRecord.zoneOffset,
+            )
+        )
+    }
+
     override suspend fun getAvailableSensors(context: Context): List<SensorManager.BasicSensor> {
         return if (hasSensor(context)) {
             listOf(
@@ -1015,7 +1192,12 @@ class HealthConnectSensorManager : SensorManager {
                 height,
                 power,
                 speed,
-                vo2max
+                vo2max,
+                cervicalMucus,
+                intermenstrualBleeding,
+                menstruation,
+                ovulationTest,
+                sexualActivity
             )
         } else {
             emptyList()

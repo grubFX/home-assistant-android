@@ -1326,4 +1326,14 @@
     <string name="sensor_description_speed">The speed in Kilometers per hour</string>
     <string name="basic_sensor_name_vo2max">VO2 Max</string>
     <string name="sensor_description_vo2max">The maximum amount of oxygen your body can take in and use during intense exercise</string>
+    <string name="basic_sensor_name_cervical_mucus">Cervical mucus</string>
+    <string name="sensor_description_cervical_mucus">The latest cervical mucus record</string>
+    <string name="basic_sensor_name_menstruation">Menstruation</string>
+    <string name="sensor_description_menstruation">The latest menstruation record</string>
+    <string name="basic_sensor_name_intermenstrual_bleeding">Intermenstrual bleeding</string>
+    <string name="sensor_description_intermenstrual_bleeding">The latest intermenstrual bleeding record</string>
+    <string name="basic_sensor_name_ovulation_test">Ovulation test</string>
+    <string name="sensor_description_ovulation_test">The latest ovulation test records</string>
+    <string name="basic_sensor_name_sexual_activity">Sexual activity</string>
+    <string name="sensor_description_sexual_activity">The latest sexual activity record</string>
 </resources>
